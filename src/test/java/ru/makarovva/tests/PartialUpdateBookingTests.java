@@ -6,6 +6,15 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import ru.makarovva.dao.Bookingdates;
+import ru.makarovva.dao.CreateBookingRequest;
+import ru.makarovva.dao.CreateTokenRequest;
+import ru.makarovva.dao.EmptyRequestResponse;
+
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.util.Properties;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.CoreMatchers.nullValue;
@@ -16,22 +25,27 @@ import static org.hamcrest.Matchers.is;
 public class PartialUpdateBookingTests {
     static String token;
     String id;
+    static Properties properties = new Properties();
+    static String baseUrl;
+
 
     @BeforeAll
-    static void beforeAll() {
+    static void beforeAll() throws IOException {
+        properties.load(new FileInputStream("src\\test\\resources\\application.properties"));
+        String username = properties.getProperty("username");
+        String password = properties.getProperty("password");
+        baseUrl = properties.getProperty("base.url");
+        System.out.println(username);
         token = given()//предусловия, подготовка
                 .log()
                 .all()
                 .header("Content-Type", "application/json")
-                .body("{\n"
-                        + "    \"username\" : \"admin\",\n"
-                        + "    \"password\" : \"password123\"\n"
-                        + "}")
+                .body(CreateTokenRequest.builder().username(username).password(password).build())
                 .expect()
                 .statusCode(200)
                 .body("token", is(CoreMatchers.not(nullValue())))
                 .when()
-                .post("https://restful-booker.herokuapp.com/auth")//шаг(и)
+                .post(baseUrl + "auth")//шаг(и)
                 .prettyPeek()
                 .body()
                 .jsonPath()
@@ -41,26 +55,26 @@ public class PartialUpdateBookingTests {
 
     @BeforeEach
     void setUp() {
+        CreateBookingRequest requestBody = CreateBookingRequest.builder()
+                .firstname("Jim")
+                .lastname("Brown")
+                .totalprice(111)
+                .depositpaid(true)
+                .bookingdates(Bookingdates.builder().checkin("2012-01-01").checkout("2019-01-01").build())
+                .additionalneeds("Breakfast")
+                .build();
+
+
         //создает бронирование
         id = given()
                 .log()
                 .all()
                 .header("Content-Type", "application/json")
-                .body("{\n"
-                        + "    \"firstname\" : \"Jim\",\n"
-                        + "    \"lastname\" : \"Brown\",\n"
-                        + "    \"totalprice\" : 111,\n"
-                        + "    \"depositpaid\" : true,\n"
-                        + "    \"bookingdates\" : {\n"
-                        + "        \"checkin\" : \"2018-01-01\",\n"
-                        + "        \"checkout\" : \"2019-01-01\"\n"
-                        + "    },\n"
-                        + "    \"additionalneeds\" : \"Breakfast\"\n"
-                        + "}")
+                .body(requestBody)
                 .expect()
                 .statusCode(200)
                 .when()
-                .post("https://restful-booker.herokuapp.com/booking")
+                .post(baseUrl + "booking")
                 .prettyPeek()
                 .body()
                 .jsonPath()
@@ -68,22 +82,23 @@ public class PartialUpdateBookingTests {
                 .toString();
     }
 
+
     @Test
     void patchBookingChangeFirstnameAndLastnamePositiveTest() {
+        EmptyRequestResponse requestResponse = new EmptyRequestResponse();
+        requestResponse.setAdditionalProperty("firstname","John");
+        requestResponse.setAdditionalProperty("lastname","Black");
         //создает бронирование
         Response response =given()
                 .log()
                 .all()
                 .header("Content-Type", "application/json")
                 .header("Cookie", "token=" + token)
-                .body("{\n"
-                        + "    \"firstname\" : \"John\",\n"
-                        + "    \"lastname\" : \"Black\"\n"
-                        + "}")
+                .body(requestResponse)
                 .expect()
                 .statusCode(200)
                 .when()
-                .patch("https://restful-booker.herokuapp.com/booking/"+ id)
+                .patch(baseUrl + "booking/"+ id)
                 .prettyPeek()
                 .then()
                 .extract().response();
@@ -102,13 +117,11 @@ public class PartialUpdateBookingTests {
                 .all()
                 .header("Content-Type", "application/json")
                 .header("Cookie", "token=" + token)
-                .body("{\n"
-                        + "    \"firstname\" : \"John\"\n"
-                        + "}")
+                .body(CreateBookingRequest.builder().firstname("John").build())
                 .expect()
                 .statusCode(200)
                 .when()
-                .patch("https://restful-booker.herokuapp.com/booking/"+ id)
+                .patch(baseUrl + "booking/"+ id)
                 .prettyPeek()
                 .then()
                 .extract().response();
@@ -119,6 +132,29 @@ public class PartialUpdateBookingTests {
     }
 
     @Test
+    void patchBookingChangeOnlyNamePositiveTest2() {
+        //создает бронирование
+        EmptyRequestResponse emptyRequestResponse =given()
+                .log()
+                .all()
+                .header("Content-Type", "application/json")
+                .header("Cookie", "token=" + token)
+                .body(CreateBookingRequest.builder().firstname("John").build())
+                .expect()
+                .statusCode(200)
+                .when()
+                .patch(baseUrl + "booking/"+ id)
+                .prettyPeek()
+                .then()
+                .extract().response().as(EmptyRequestResponse.class);
+
+        System.out.println(emptyRequestResponse.getAdditionalProperties());
+
+        Assertions.assertEquals("John", emptyRequestResponse.getAdditionalProperties().get("firstname"));
+
+
+    }
+    @Test
     void patchBookingNoChangesPositiveTest() {
         //создает бронирование
         Response response =given()
@@ -126,12 +162,11 @@ public class PartialUpdateBookingTests {
                 .all()
                 .header("Content-Type", "application/json")
                 .header("Cookie", "token=" + token)
-                .body("{\n"
-                        + "}")
+                .body(new EmptyRequestResponse())
                 .expect()
                 .statusCode(200)
                 .when()
-                .patch("https://restful-booker.herokuapp.com/booking/"+ id)
+                .patch(baseUrl + "booking/"+ id)
                 .prettyPeek()
                 .then()
                 .extract().response();
@@ -147,13 +182,11 @@ public class PartialUpdateBookingTests {
                 .log()
                 .all()
                 .header("Content-Type", "application/json")
-                .body("{\n"
-                        + "    \"firstname\" : \"John\"\n"
-                        + "}")
+                .body(CreateBookingRequest.builder().firstname("John").build())
                 .expect()
                 .statusCode(403)
                 .when()
-                .patch("https://restful-booker.herokuapp.com/booking/"+ id)
+                .patch(baseUrl + "booking/"+ id)
                 .prettyPeek()
                 .then()
                 .extract().response();
@@ -163,19 +196,16 @@ public class PartialUpdateBookingTests {
     }
     @Test
     void patchBookingNonExistentIdNegativeTest() {
-        //создает бронирование
         Response response =given()
                 .log()
                 .all()
                 .header("Content-Type", "application/json")
                 .header("Cookie", "token=" + token)
-                .body("{\n"
-                        + "    \"firstname\" : \"John\"\n"
-                        + "}")
+                .body(CreateBookingRequest.builder().firstname("John").build())
                 .expect()
                 .statusCode(405)
                 .when()
-                .patch("https://restful-booker.herokuapp.com/booking/8768675")
+                .patch(baseUrl + "booking/" + "8768675")
                 .prettyPeek()
                 .then()
                 .extract().response();
@@ -192,13 +222,11 @@ public class PartialUpdateBookingTests {
                 .all()
                 .header("Content-Type", "application/json")
                 .header("Cookie", "token=" + token)
-                .body("{\n"
-                        + "    \"firstname\" : \"John\"\n"
-                        + "}")
+                .body(CreateBookingRequest.builder().firstname("John").build())
                 .expect()
                 .statusCode(405)
                 .when()
-                .patch("https://restful-booker.herokuapp.com/booking/gfgfgh")
+                .patch(baseUrl + "booking/" + "gfgfgh")
                 .prettyPeek()
                 .then()
                 .extract().response();
@@ -208,19 +236,18 @@ public class PartialUpdateBookingTests {
     }
     @Test
     void patchBookingIntFirstnameNegativeTest() {
-        //создает бронирование
+        EmptyRequestResponse request = new EmptyRequestResponse();
+        request.setAdditionalProperty("firstname", 123);
         Response response =given()
                 .log()
                 .all()
                 .header("Content-Type", "application/json")
                 .header("Cookie", "token=" + token)
-                .body("{\n"
-                        + "    \"firstname\" : 123\n"
-                        + "}")
+                .body(request)
                 .expect()
                 .statusCode(200)
                 .when()
-                .patch("https://restful-booker.herokuapp.com/booking/"+ id)
+                .patch(baseUrl + "booking/"+ id)
                 .prettyPeek()
                 .then()
                 .extract().response();
