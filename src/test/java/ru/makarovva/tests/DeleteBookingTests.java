@@ -1,3 +1,5 @@
+package ru.makarovva.tests;
+
 import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
