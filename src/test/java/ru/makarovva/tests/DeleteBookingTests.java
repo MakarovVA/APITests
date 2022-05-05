@@ -1,5 +1,8 @@
 package ru.makarovva.tests;
 
+import io.qameta.allure.Severity;
+import io.qameta.allure.SeverityLevel;
+import io.qameta.allure.Story;
 import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -17,7 +20,8 @@ import static io.restassured.RestAssured.given;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.Matchers.is;
 
-
+@Severity(SeverityLevel.BLOCKER)
+@Story("delete a booking")
 
 
 public class DeleteBookingTests {
