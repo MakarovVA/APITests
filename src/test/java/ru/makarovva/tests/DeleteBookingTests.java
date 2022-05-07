@@ -1,8 +1,8 @@
 package ru.makarovva.tests;
 
-import io.qameta.allure.Severity;
-import io.qameta.allure.SeverityLevel;
-import io.qameta.allure.Story;
+import io.qameta.allure.*;
+import io.qameta.allure.restassured.AllureRestAssured;
+import io.restassured.RestAssured;
 import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -22,38 +22,11 @@ import static org.hamcrest.Matchers.is;
 
 @Severity(SeverityLevel.BLOCKER)
 @Story("delete a booking")
+@Feature("Tests for booking deletion")
 
 
-public class DeleteBookingTests {
+public class DeleteBookingTests extends BaseTest {
 
-    static Properties properties = new Properties();
-    static String baseUrl;
-
-    static String token;
-    String id;
-
-    @BeforeAll
-    static void beforeAll() throws IOException {
-        properties.load(new FileInputStream("src\\test\\resources\\application.properties"));
-        String username = properties.getProperty("username");
-        String password = properties.getProperty("password");
-        baseUrl = properties.getProperty("base.url");
-        token = given()//предусловия, подготовка
-                .log()
-                .all()
-                .header("Content-Type", "application/json")
-                .body(CreateTokenRequest.builder().username(username).password(password).build())
-                .expect()
-                .statusCode(200)
-                .body("token", is(CoreMatchers.not(nullValue())))
-                .when()
-                .post(baseUrl + "auth")//шаг(и)
-                .prettyPeek()
-                .body()
-                .jsonPath()
-                .get("token")
-                .toString();
-    }
 
     @BeforeEach
     void setUp() {
@@ -82,6 +55,8 @@ public class DeleteBookingTests {
     }
 
     @Test
+    @Description("Delete an existing booking")
+    @Step("Delete an existing booking")
     void deleteBookingPositiveTest() {
         given()
                 .log()
@@ -95,6 +70,8 @@ public class DeleteBookingTests {
     }
 
     @Test
+    @Description("Delete non existent Id booking")
+    @Step("Delete non existent Id booking")
     void deleteBookingNonExistentIdNegativeTest() {
         given()
                 .log()
@@ -108,6 +85,8 @@ public class DeleteBookingTests {
     }
 
     @Test
+    @Description("Delete string id booking")
+    @Step("Delete string id booking")
     void deleteBookingStringIdNegativeTest() {
         given()
                 .log()
@@ -121,6 +100,8 @@ public class DeleteBookingTests {
     }
 
     @Test
+    @Description("Delete booking without id")
+    @Step("Delete booking without id")
     void deleteBookingNoIdNegativeTest() {
         given()
                 .log()
@@ -134,7 +115,8 @@ public class DeleteBookingTests {
     }
 
     @Test
-
+    @Description("Delete booking without authorisation")
+    @Step("Delete booking without authorisation")
     void deleteBookingNoAuthorisationNegativeTest() {
         given()
                 .log()

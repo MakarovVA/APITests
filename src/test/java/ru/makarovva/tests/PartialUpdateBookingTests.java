@@ -1,5 +1,6 @@
 package ru.makarovva.tests;
 
+import io.qameta.allure.*;
 import io.restassured.response.Response;
 import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.Assertions;
@@ -20,38 +21,12 @@ import static io.restassured.RestAssured.given;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.Matchers.is;
 
+@Severity(SeverityLevel.BLOCKER)
+@Story("Partial booking update")
+@Feature("Tests for booking partial update")
 
 
-public class PartialUpdateBookingTests {
-    static String token;
-    String id;
-    static Properties properties = new Properties();
-    static String baseUrl;
-
-
-    @BeforeAll
-    static void beforeAll() throws IOException {
-        properties.load(new FileInputStream("src\\test\\resources\\application.properties"));
-        String username = properties.getProperty("username");
-        String password = properties.getProperty("password");
-        baseUrl = properties.getProperty("base.url");
-        System.out.println(username);
-        token = given()//предусловия, подготовка
-                .log()
-                .all()
-                .header("Content-Type", "application/json")
-                .body(CreateTokenRequest.builder().username(username).password(password).build())
-                .expect()
-                .statusCode(200)
-                .body("token", is(CoreMatchers.not(nullValue())))
-                .when()
-                .post(baseUrl + "auth")//шаг(и)
-                .prettyPeek()
-                .body()
-                .jsonPath()
-                .get("token")
-                .toString();
-    }
+public class PartialUpdateBookingTests extends BaseTest {
 
     @BeforeEach
     void setUp() {
@@ -84,6 +59,8 @@ public class PartialUpdateBookingTests {
 
 
     @Test
+    @Description("Partial booking update for firstname and lastname")
+    @Step("Patch firstname and lastname")
     void patchBookingChangeFirstnameAndLastnamePositiveTest() {
         EmptyRequestResponse requestResponse = new EmptyRequestResponse();
         requestResponse.setAdditionalProperty("firstname","John");
@@ -110,7 +87,9 @@ public class PartialUpdateBookingTests {
     }
 
     @Test
-    void patchBookingChangeOnlyNamePositiveTest() {
+    @Description("Partial booking update for firstname")
+    @Step("Patch firstname")
+    void patchBookingChangeOnlyFirstnamePositiveTest() {
         //создает бронирование
         Response response =given()
                 .log()
@@ -132,29 +111,8 @@ public class PartialUpdateBookingTests {
     }
 
     @Test
-    void patchBookingChangeOnlyNamePositiveTest2() {
-        //создает бронирование
-        EmptyRequestResponse emptyRequestResponse =given()
-                .log()
-                .all()
-                .header("Content-Type", "application/json")
-                .header("Cookie", "token=" + token)
-                .body(CreateBookingRequest.builder().firstname("John").build())
-                .expect()
-                .statusCode(200)
-                .when()
-                .patch(baseUrl + "booking/"+ id)
-                .prettyPeek()
-                .then()
-                .extract().response().as(EmptyRequestResponse.class);
-
-        System.out.println(emptyRequestResponse.getAdditionalProperties());
-
-        Assertions.assertEquals("John", emptyRequestResponse.getAdditionalProperties().get("firstname"));
-
-
-    }
-    @Test
+    @Description("Partial booking update without any changes")
+    @Step("Patch without any changes")
     void patchBookingNoChangesPositiveTest() {
         //создает бронирование
         Response response =given()
@@ -176,6 +134,8 @@ public class PartialUpdateBookingTests {
 
 
     @Test
+    @Description("Partial booking update for firstname without authorisation")
+    @Step("Patch firstname without authorisation")
     void patchBookingNoAuthorisationNegativeTest() {
         //создает бронирование
         Response response =given()
@@ -195,6 +155,8 @@ public class PartialUpdateBookingTests {
 
     }
     @Test
+    @Description("Partial update for firstname with non existent booking id")
+    @Step("Patch firstname update for firstname with non existent booking id")
     void patchBookingNonExistentIdNegativeTest() {
         Response response =given()
                 .log()
@@ -215,6 +177,8 @@ public class PartialUpdateBookingTests {
     }
 
     @Test
+    @Description("Partial update for firstname with string id")
+    @Step("Patch firstname for firstname with string id")
     void patchBookingStringIdNegativeTest() {
         //создает бронирование
         Response response =given()
@@ -235,6 +199,8 @@ public class PartialUpdateBookingTests {
 
     }
     @Test
+    @Description("Partial update for firstname as int")
+    @Step("Patch firstname as int")
     void patchBookingIntFirstnameNegativeTest() {
         EmptyRequestResponse request = new EmptyRequestResponse();
         request.setAdditionalProperty("firstname", 123);
