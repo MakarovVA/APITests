@@ -1,1 +1,0 @@
-{"uuid":"7793b4a7-d523-4041-9e3f-1a26b9821b12","name":"patchBookingChangeOnlyNamePositiveTest2()","children":["7cb460f7-8ba1-4d83-a4d0-b21dbded3c41"],"befores":[{"name":"setUp","status":"passed","stage":"finished","steps":[],"attachments":[],"parameters":[],"start":1651755556006,"stop":1651755557196}],"afters":[],"links":[],"start":1651755556005,"stop":1651755559139}
